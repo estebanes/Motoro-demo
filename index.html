@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Motoro</title>
   <style>
     :root {
@@ -474,6 +474,216 @@
         transform: scale(0.4) rotate(18deg);
       }
     }
+
+    /* Controles táctiles para móviles */
+    #controles-moviles {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: none;
+      z-index: 20;
+      pointer-events: none;
+      padding: 20px;
+      gap: 20px;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .joystick-container {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      pointer-events: all;
+    }
+
+    .joystick-base {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 3px solid rgba(255, 0, 153, 0.5);
+      box-shadow: 
+        0 0 20px rgba(255, 0, 153, 0.3),
+        inset 0 0 20px rgba(255, 0, 153, 0.2);
+    }
+
+    .joystick-stick {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 0, 153, 0.9) 0%, rgba(200, 0, 100, 0.8) 100%);
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 
+        0 0 15px rgba(255, 0, 153, 0.6),
+        inset 0 0 10px rgba(255, 255, 255, 0.2);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      transition: transform 0.1s ease-out;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .joystick-stick:active {
+      cursor: grabbing;
+    }
+
+    .boton-dash-movil {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 0, 153, 0.9) 0%, rgba(200, 0, 100, 0.8) 100%);
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 
+        0 0 20px rgba(255, 0, 153, 0.5),
+        inset 0 0 15px rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 700;
+      pointer-events: all;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .boton-dash-movil:active {
+      transform: scale(0.9);
+      box-shadow: 
+        0 0 15px rgba(255, 0, 153, 0.7),
+        inset 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+
+    .boton-dash-movil.cooldown {
+      opacity: 0.5;
+      filter: grayscale(50%);
+    }
+
+    /* Media queries para móviles */
+    @media (max-width: 768px) {
+      .cubo {
+        width: clamp(48px, 12vw, 64px);
+        border-width: clamp(2px, 0.5vw, 4px);
+      }
+
+      .cubo::before,
+      .cubo::after {
+        width: clamp(8px, 2vw, 10px);
+        height: clamp(11px, 2.5vw, 14px);
+        top: clamp(12px, 3vw, 16px);
+      }
+
+      .cubo::before {
+        left: clamp(12px, 3vw, 16px);
+      }
+
+      .cubo::after {
+        right: clamp(12px, 3vw, 16px);
+      }
+
+      .sierra {
+        width: clamp(60px, 15vw, 86px);
+        height: clamp(60px, 15vw, 86px);
+      }
+
+      .boton-nivel {
+        width: clamp(70px, 18vw, 100px);
+        height: clamp(70px, 18vw, 100px);
+        border-width: clamp(4px, 1vw, 6px);
+      }
+
+      .llave {
+        width: clamp(35px, 9vw, 50px);
+        height: clamp(35px, 9vw, 50px);
+      }
+
+      .llave::before {
+        font-size: clamp(35px, 9vw, 50px);
+      }
+
+      .modulo {
+        /* Los módulos ya tienen tamaños configurados, pero ajustamos visualmente */
+      }
+
+      #indicador-nivel {
+        top: clamp(10px, 2vw, 20px);
+        right: clamp(10px, 2vw, 20px);
+        padding: clamp(8px, 2vw, 12px) clamp(12px, 3vw, 20px);
+        font-size: clamp(14px, 3.5vw, 18px);
+      }
+
+      #palabra-random {
+        font-size: clamp(18px, 5vw, 32px);
+      }
+
+      #game-over .panel {
+        padding: clamp(20px, 5vw, 36px) clamp(30px, 7vw, 52px);
+        min-width: min(350px, 85vw);
+      }
+
+      #game-over h2 {
+        font-size: clamp(24px, 6vw, 32px);
+      }
+
+      #game-over p {
+        font-size: clamp(14px, 3.5vw, 16px);
+        margin: clamp(10px, 2vw, 14px) 0 0 0;
+      }
+
+      #game-over button {
+        padding: clamp(8px, 2vw, 10px) clamp(20px, 5vw, 28px);
+        font-size: clamp(14px, 3.5vw, 16px);
+        margin-top: clamp(20px, 5vw, 28px);
+      }
+
+      #victoria .mensaje {
+        font-size: clamp(36px, 10vw, 72px);
+      }
+
+      #controles-moviles {
+        display: flex;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .joystick-container {
+        width: 120px;
+        height: 120px;
+      }
+
+      .joystick-stick {
+        width: 50px;
+        height: 50px;
+      }
+
+      .boton-dash-movil {
+        width: 70px;
+        height: 70px;
+        font-size: 20px;
+      }
+
+      #controles-moviles {
+        padding: 15px;
+        gap: 15px;
+      }
+    }
+
+    /* Prevenir selección de texto en controles */
+    .joystick-container,
+    .boton-dash-movil {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
   </style>
 </head>
 <body>
@@ -493,6 +703,16 @@
   <div id="victoria">
     <div class="mensaje">Ganaste</div>
   </div>
+  
+  <!-- Controles táctiles para móviles -->
+  <div id="controles-moviles">
+    <div class="joystick-container">
+      <div class="joystick-base"></div>
+      <div class="joystick-stick" id="joystick-stick"></div>
+    </div>
+    <button class="boton-dash-movil" id="boton-dash-movil">Dash</button>
+  </div>
+
   <script>
     (function () {
       const area = document.getElementById('area-juego');
@@ -510,6 +730,46 @@
       const indicadorNivel = document.getElementById('indicador-nivel');
       const palabraRandom = document.getElementById('palabra-random');
       const victoriaOverlay = document.getElementById('victoria');
+      
+      // Controles táctiles
+      const joystickStick = document.getElementById('joystick-stick');
+      const botonDashMovil = document.getElementById('boton-dash-movil');
+      const joystickContainer = document.querySelector('.joystick-container');
+      
+      // Estado del joystick
+      const joystick = {
+        activo: false,
+        x: 0,
+        y: 0,
+        radio: 0, // Se calculará dinámicamente
+        dx: 0,
+        dy: 0
+      };
+      
+      // Calcular radio del joystick dinámicamente
+      function calcularRadioJoystick() {
+        if (joystickContainer && joystickStick) {
+          const rect = joystickContainer.getBoundingClientRect();
+          const stickRect = joystickStick.getBoundingClientRect();
+          if (rect.width > 0 && stickRect.width > 0) {
+            // Radio = (tamaño base - tamaño stick) / 2 - margen
+            joystick.radio = Math.max(20, (rect.width - stickRect.width) / 2 - 5);
+          }
+        }
+      }
+      
+      // Calcular radio inicial después de que el DOM esté listo
+      if (joystickContainer && joystickStick) {
+        // Esperar un momento para que los estilos se apliquen
+        setTimeout(() => {
+          calcularRadioJoystick();
+        }, 100);
+        // Recalcular en resize
+        window.addEventListener('resize', calcularRadioJoystick);
+      }
+      
+      // Detectar si es dispositivo táctil
+      const esTactil = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
       // Lista de palabras graciosas en inglés
       const palabrasGraciosas = [
@@ -1181,10 +1441,19 @@
       function obtenerVectorDireccion() {
         let dx = 0;
         let dy = 0;
+        
+        // Controles de teclado (si están activos)
         if (teclasActivas.has('KeyD')) dx += 1;
         if (teclasActivas.has('KeyA')) dx -= 1;
         if (teclasActivas.has('KeyS')) dy += 1;
         if (teclasActivas.has('KeyW')) dy -= 1;
+        
+        // Controles táctiles (joystick) - solo si está activo y no hay teclado activo
+        if (joystick.activo && teclasActivas.size === 0) {
+          dx = joystick.dx;
+          dy = joystick.dy;
+        }
+        
         const longitud = Math.hypot(dx, dy);
         return { dx, dy, longitud };
       }
@@ -1496,6 +1765,138 @@
       });
 
       botonReiniciar.addEventListener('click', reiniciarJuego);
+
+      // Funciones para el joystick táctil
+      function obtenerPosicionTactil(e) {
+        const touch = e.touches ? e.touches[0] : e;
+        const rect = joystickContainer.getBoundingClientRect();
+        return {
+          x: touch.clientX - rect.left - rect.width / 2,
+          y: touch.clientY - rect.top - rect.height / 2
+        };
+      }
+
+      function actualizarJoystick(x, y) {
+        // Asegurar que el radio esté calculado
+        if (joystick.radio <= 0) {
+          calcularRadioJoystick();
+        }
+        
+        const distancia = Math.hypot(x, y);
+        const radio = Math.max(joystick.radio, 20); // Radio mínimo de 20px
+        
+        if (distancia > radio) {
+          // Limitar al radio máximo
+          x = (x / distancia) * radio;
+          y = (y / distancia) * radio;
+        }
+        
+        joystick.x = x;
+        joystick.y = y;
+        joystick.dx = distancia > 0 && radio > 0 ? x / radio : 0;
+        joystick.dy = distancia > 0 && radio > 0 ? y / radio : 0;
+        
+        // Actualizar posición visual del stick
+        if (joystickStick) {
+          joystickStick.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+        }
+      }
+
+      function resetearJoystick() {
+        joystick.activo = false;
+        joystick.x = 0;
+        joystick.y = 0;
+        joystick.dx = 0;
+        joystick.dy = 0;
+        joystickStick.style.transform = 'translate(-50%, -50%)';
+      }
+
+      // Eventos del joystick
+      if (joystickContainer && joystickStick) {
+        joystickContainer.addEventListener('touchstart', (e) => {
+          if (estadoJuego.gameOver) return;
+          e.preventDefault();
+          joystick.activo = true;
+          const pos = obtenerPosicionTactil(e);
+          actualizarJoystick(pos.x, pos.y);
+        });
+
+        joystickContainer.addEventListener('touchmove', (e) => {
+          if (!joystick.activo || estadoJuego.gameOver) return;
+          e.preventDefault();
+          const pos = obtenerPosicionTactil(e);
+          actualizarJoystick(pos.x, pos.y);
+        });
+
+        joystickContainer.addEventListener('touchend', (e) => {
+          if (estadoJuego.gameOver) return;
+          e.preventDefault();
+          resetearJoystick();
+        });
+
+        joystickContainer.addEventListener('touchcancel', (e) => {
+          if (estadoJuego.gameOver) return;
+          e.preventDefault();
+          resetearJoystick();
+        });
+
+        // Soporte para mouse (para testing en desktop)
+        joystickContainer.addEventListener('mousedown', (e) => {
+          if (estadoJuego.gameOver) return;
+          joystick.activo = true;
+          const pos = obtenerPosicionTactil(e);
+          actualizarJoystick(pos.x, pos.y);
+          
+          const mouseMove = (e) => {
+            if (!joystick.activo || estadoJuego.gameOver) return;
+            const pos = obtenerPosicionTactil(e);
+            actualizarJoystick(pos.x, pos.y);
+          };
+          
+          const mouseUp = () => {
+            resetearJoystick();
+            document.removeEventListener('mousemove', mouseMove);
+            document.removeEventListener('mouseup', mouseUp);
+          };
+          
+          document.addEventListener('mousemove', mouseMove);
+          document.addEventListener('mouseup', mouseUp);
+        });
+      }
+
+      // Evento del botón dash móvil
+      if (botonDashMovil) {
+        botonDashMovil.addEventListener('touchstart', (e) => {
+          if (estadoJuego.gameOver) return;
+          e.preventDefault();
+          if (!dash.activo && dash.disponible) {
+            iniciarDash();
+          }
+        });
+
+        botonDashMovil.addEventListener('click', (e) => {
+          if (estadoJuego.gameOver) return;
+          e.preventDefault();
+          if (!dash.activo && dash.disponible) {
+            iniciarDash();
+          }
+        });
+
+        // Actualizar estado visual del botón dash
+        function actualizarBotonDash() {
+          if (!botonDashMovil) return;
+          if (dash.disponible && !dash.activo) {
+            botonDashMovil.classList.remove('cooldown');
+          } else {
+            botonDashMovil.classList.add('cooldown');
+          }
+        }
+
+        // Observar cambios en el dash
+        const dashObserver = setInterval(() => {
+          actualizarBotonDash();
+        }, 100);
+      }
 
       function bucle() {
         // No permitir movimiento si hay victoria o game over
