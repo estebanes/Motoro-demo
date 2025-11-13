@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌟 Steve's Magical Adventure 🌟</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      font-family: 'Orbitron', monospace;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* Efectos de partículas de fondo */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      animation: float 6s infinite linear;
+    }
+    
+    @keyframes float {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    
+    /* Contenedor principal */
+    .game-container {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 20px;
+    }
+    
+    /* Título mágico */
+    .magic-title {
+      font-size: 3em;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 20px;
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradientShift 3s ease-in-out infinite;
+      text-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+    }
+    
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    
+    /* Canvas del juego con efectos */
+    #game {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      box-shadow: 
+        0 0 30px rgba(255, 255, 255, 0.3),
+        inset 0 0 30px rgba(255, 255, 255, 0.1);
+      background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+      margin: 20px auto;
+      display: block;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* HUD del juego */
+    .game-hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .hud-item {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px 15px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: bold;
+      backdrop-filter: blur(10px);
+    }
+    
+    .power-up-indicator {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+    
+    .power-up {
+      background: rgba(255, 215, 0, 0.9);
+      color: #000;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 5px;
+      font-size: 12px;
+      font-weight: bold;
+      animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    /* Menú principal */
+    .main-menu {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 200;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 40px;
+      border-radius: 20px;
+      backdrop-filter: blur(15px);
+    }
+    
+    .menu-title {
+      font-size: 2.5em;
+      margin-bottom: 30px;
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .menu-button {
+      display: block;
+      width: 200px;
+      padding: 15px;
+      margin: 10px auto;
+      background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .menu-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Botones de control */
+    .control-buttons {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      display: flex;
+      gap: 20px;
+    }
+    
+    .control-btn {
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    .control-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .magic-title {
+        font-size: 2em;
+      }
+      
+      #game {
+        width: 90%;
+        height: auto;
+      }
+      
+      .control-buttons {
+        bottom: 10px;
+      }
+      
+      .control-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+    }
+    
+    /* Efectos de brillo */
+    .glow {
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    
+    @keyframes glow {
+      from { box-shadow: 0 0 20px rgba(255, 255, 255, 0.5); }
+      to { box-shadow: 0 0 30px rgba(255, 255, 255, 0.8); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Partículas de fondo -->
+  <div class="particles" id="particles"></div>
+  
+  <div class="game-container">
+    <h1 class="magic-title glow">🌟 Steve's Magical Adventure 🌟</h1>
+    
+    <canvas id="game" width="800" height="400"></canvas>
+    
+    <!-- HUD del juego -->
+    <div class="game-hud" id="gameHud" style="display: none;">
+      <div class="hud-item">Puntaje: <span id="score">0</span></div>
+      <div class="hud-item">Distancia: <span id="distance">0</span>m</div>
+      <div class="hud-item">Combo: <span id="combo">x1</span></div>
+      <div class="hud-item">Nivel: <span id="level">1</span></div>
+      <div class="hud-item">Vidas: <span id="lives">3</span> ❤️</div>
+    </div>
+    
+    <!-- Indicador de power-ups -->
+    <div class="power-up-indicator" id="powerUpIndicator" style="display: none;"></div>
+    
+    <!-- Botones de control móvil -->
+    <div class="control-buttons" id="controlButtons" style="display: none;">
+      <button class="control-btn" id="jumpBtn">⬆️</button>
+      <button class="control-btn" id="powerBtn">⚡</button>
+    </div>
+  </div>
+  
+  <!-- Menú principal -->
+  <div class="main-menu" id="mainMenu">
+    <h2 class="menu-title">🌟 Steve's Adventure 🌟</h2>
+    <button class="menu-button" onclick="startGame()">🎮 Jugar</button>
+    <button class="menu-button" onclick="showSettings()">⚙️ Configuración</button>
+    <button class="menu-button" onclick="showShop()">🛒 Tienda</button>
+    <button class="menu-button" onclick="showStats()">📊 Estadísticas</button>
+  </div>
+
+  <script>
+    // Configuración del juego mágico
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    
+    // Estados del juego
+    let gameState = {
+      // Steve
+      steve: {
+        x: 50,
+        y: 320,
+        vy: 0,
+        width: 60,
+        height: 80,
+        jumping: false,
+        doubleJump: false,
+        invincible: false,
+        shield: false,
+        lives: 3,
+        animation: {
+          frame: 0,
+          maxFrames: 8,
+          running: true
+        }
+      },
+      
+      // Obstáculos (solo cactus en el suelo)
+      obstacles: [],
+      powerUps: [],
+      particles: [],
+      explosions: [],
+      
+      // Juego
+      score: 0,
+      distance: 0,
+      combo: 1,
+      level: 1,
+      gameOver: false,
+      gameStarted: false,
+      paused: false,
+      
+      // Física (más fácil)
+      gravity: 0.6,
+      jumpPower: -12,
+      speed: 5,
+      
+      // Efectos
+      magicEffects: true,
+      soundEnabled: true,
+      musicEnabled: true,
+      
+      // Power-ups activos
+      activePowerUps: [],
+      
+      // Temas
+      currentTheme: 0,
+      themes: [
+        { bg: 'linear-gradient(180deg, #87CEEB 0%, #98FB98 100%)', name: 'Naturaleza' },
+        { bg: 'linear-gradient(180deg, #FF6B6B 0%, #4ECDC4 100%)', name: 'Fuego' },
+        { bg: 'linear-gradient(180deg, #A8E6CF 0%, #DCEDC8 100%)', name: 'Bosque' },
+        { bg: 'linear-gradient(180deg, #FFD93D 0%, #FF6B6B 100%)', name: 'Atardecer' },
+        { bg: 'linear-gradient(180deg, #4A90E2 0%, #7B68EE 100%)', name: 'Noche' }
+      ],
+      
+      // Logros
+      achievements: [],
+      highScore: 0,
+      totalDistance: 0,
+      totalJumps: 0,
+      
+      // Configuración
+      settings: {
+        volume: 0.7,
+        particles: true,
+        effects: true,
+        difficulty: 'easy'
+      }
+    };
+    
+    // Sistema de partículas mágicas mejorado
+    class Particle {
+      constructor(x, y, color = '#fff', type = 'normal') {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = (Math.random() - 0.5) * 3;
+        this.life = 1;
+        this.color = color;
+        this.size = Math.random() * 4 + 2;
+        this.type = type;
+        this.angle = 0;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+      }
+      
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= 0.015;
+        this.size *= 0.99;
+        this.angle += this.rotationSpeed;
+        
+        if (this.type === 'magic') {
+          this.vy += 0.05;
+        }
+      }
+      
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life;
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        
+        if (this.type === 'magic') {
+          // Partícula mágica con forma de estrella
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          for (let i = 0; i < 5; i++) {
+            const angle = (i * 2 * Math.PI) / 5;
+            const x = Math.cos(angle) * this.size;
+            const y = Math.sin(angle) * this.size;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          ctx.fill();
+        } else {
+          // Partícula normal circular
+          ctx.fillStyle = this.color;
+          ctx.beginPath();
+          ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        ctx.restore();
+      }
+    }
+    
+    // Sistema de power-ups mejorado
+    class PowerUp {
+      constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.width = 30;
+        this.height = 30;
+        this.type = type;
+        this.collected = false;
+        this.animation = {
+          frame: 0,
+          maxFrames: 20
+        };
+        
+        this.colors = {
+          shield: '#4ECDC4',
+          doubleJump: '#FFD93D',
+          invincible: '#FF6B6B',
+          slowTime: '#A8E6CF',
+          teleport: '#7B68EE',
+          extraLife: '#FF69B4'
+        };
+      }
+      
+      update() {
+        this.animation.frame = (this.animation.frame + 1) % this.animation.maxFrames;
+        this.y += Math.sin(this.animation.frame * 0.2) * 0.3;
+      }
+      
+      draw() {
+        if (this.collected) return;
+        
+        ctx.save();
+        
+        // Efecto de brillo
+        const glow = Math.sin(this.animation.frame * 0.3) * 0.5 + 0.5;
+        ctx.shadowColor = this.colors[this.type];
+        ctx.shadowBlur = 8 + glow * 8;
+        
+        // Dibujar power-up
+        ctx.fillStyle = this.colors[this.type];
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        
+        // Símbolo del power-up
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px Orbitron';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const symbols = {
+          shield: '🛡️',
+          doubleJump: '⬆️',
+          invincible: '⚡',
+          slowTime: '⏰',
+          teleport: '🌀',
+          extraLife: '❤️'
+        };
+        
+        ctx.fillText(symbols[this.type], this.x + this.width/2, this.y + this.height/2);
+        
+        ctx.restore();
+      }
+    }
+    
+    // Sistema de obstáculos simplificado (solo cactus)
+    class Obstacle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 20;
+        this.height = 40;
+        this.destroyed = false;
+        this.animation = {
+          frame: 0,
+          maxFrames: 10
+        };
+      }
+      
+      update() {
+        this.animation.frame = (this.animation.frame + 1) % this.animation.maxFrames;
+      }
+      
+      draw() {
+        if (this.destroyed) return;
+        
+        ctx.save();
+        
+        // Efecto de brillo para obstáculos
+        if (gameState.magicEffects) {
+          ctx.shadowColor = '#ff0000';
+          ctx.shadowBlur = 3;
+        }
+        
+        // Gradiente para cactus
+        const gradient = ctx.createLinearGradient(this.x, this.y, this.x, this.y + this.height);
+        gradient.addColorStop(0, '#228B22');
+        gradient.addColorStop(1, '#006400');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        
+        // Detalles del cactus
+        ctx.fillStyle = '#32CD32';
+        ctx.fillRect(this.x + 2, this.y + 2, this.width - 4, 4);
+        ctx.fillRect(this.x + 2, this.y + this.height - 6, this.width - 4, 4);
+        
+        // Espinas del cactus
+        ctx.fillStyle = '#228B22';
+        for (let i = 0; i < 3; i++) {
+          ctx.fillRect(this.x - 2, this.y + 10 + i * 8, 4, 2);
+          ctx.fillRect(this.x + this.width - 2, this.y + 10 + i * 8, 4, 2);
+        }
+        
+        ctx.restore();
+      }
+    }
+    
+    // Crear partículas de fondo
+    function createBackgroundParticles() {
+      const particlesContainer = document.getElementById('particles');
+      for (let i = 0; i < 30; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+        particlesContainer.appendChild(particle);
+      }
+    }
+    
+    // Dibujar Steve con animaciones mejoradas
+    function drawSteve() {
+      const steve = gameState.steve;
+      
+      // Efecto de brillo
+      if (gameState.magicEffects) {
+        ctx.save();
+        ctx.shadowColor = steve.invincible ? '#FFD700' : '#fff';
+        ctx.shadowBlur = steve.invincible ? 15 : 8;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+      
+      // Animación de correr
+      const runOffset = steve.animation.running ? Math.sin(steve.animation.frame * 0.5) * 1.5 : 0;
+      
+      // Cabeza con gradiente
+      const headGradient = ctx.createLinearGradient(steve.x + 16, steve.y, steve.x + 44, steve.y + 28);
+      headGradient.addColorStop(0, '#a57939');
+      headGradient.addColorStop(1, '#8B4513');
+      ctx.fillStyle = headGradient;
+      ctx.fillRect(steve.x + 16, steve.y, 28, 28);
+      
+      // Cabello animado
+      ctx.fillStyle = '#5a3a1b';
+      ctx.fillRect(steve.x + 16, steve.y, 28, 8);
+      
+      // Cuerpo con camiseta mágica
+      const bodyGradient = ctx.createLinearGradient(steve.x + 18, steve.y + 28, steve.x + 42, steve.y + 52);
+      bodyGradient.addColorStop(0, '#3c9ee7');
+      bodyGradient.addColorStop(1, '#1e3a8a');
+      ctx.fillStyle = bodyGradient;
+      ctx.fillRect(steve.x + 18, steve.y + 28, 24, 24);
+      
+      // Piernas animadas
+      ctx.fillStyle = '#4a6c94';
+      ctx.fillRect(steve.x + 18, steve.y + 52, 10, 20 + runOffset);
+      ctx.fillRect(steve.x + 32, steve.y + 52, 10, 20 - runOffset);
+      
+      // Brazos animados
+      ctx.fillStyle = '#a57939';
+      ctx.fillRect(steve.x + 6, steve.y + 28, 10, 24 + runOffset);
+      ctx.fillRect(steve.x + 42, steve.y + 28, 10, 24 - runOffset);
+      
+      // Ojos brillantes
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(steve.x + 22, steve.y + 10, 5, 5);
+      ctx.fillRect(steve.x + 33, steve.y + 10, 5, 5);
+      
+      // Pupilas mágicas
+      ctx.fillStyle = steve.invincible ? '#FFD700' : '#FFD700';
+      ctx.fillRect(steve.x + 23, steve.y + 12, 2, 3);
+      ctx.fillRect(steve.x + 35, steve.y + 12, 2, 3);
+      
+      // Boca
+      ctx.fillStyle = '#5a3a1b';
+      ctx.fillRect(steve.x + 27, steve.y + 20, 8, 3);
+      
+      // Escudo
+      if (steve.shield) {
+        ctx.strokeStyle = '#4ECDC4';
+        ctx.lineWidth = 3;
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.arc(steve.x + 30, steve.y + 40, 50, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      
+      ctx.restore();
+      
+      // Partículas de movimiento
+      if (gameState.magicEffects && Math.random() < 0.2) {
+        gameState.particles.push(new Particle(steve.x + 30, steve.y + 40, '#FFD700', 'magic'));
+      }
+      
+      // Actualizar animación
+      if (steve.animation.running) {
+        steve.animation.frame = (steve.animation.frame + 1) % steve.animation.maxFrames;
+      }
+    }
+    
+    // Dibujar obstáculos
+    function drawObstacles() {
+      gameState.obstacles.forEach(obstacle => {
+        obstacle.update();
+        obstacle.draw();
+      });
+    }
+    
+    // Dibujar power-ups
+    function drawPowerUps() {
+      gameState.powerUps.forEach(powerUp => {
+        powerUp.update();
+        powerUp.draw();
+      });
+    }
+    
+    // Dibujar suelo mágico mejorado
+    function drawGround() {
+      const gradient = ctx.createLinearGradient(0, 380, 0, 400);
+      gradient.addColorStop(0, '#8B4513');
+      gradient.addColorStop(1, '#654321');
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 380, canvas.width, 20);
+      
+      // Líneas mágicas en el suelo
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < canvas.width; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(i, 380);
+        ctx.lineTo(i + 20, 380);
+        ctx.stroke();
+      }
+      
+      // Hierba mágica
+      ctx.fillStyle = '#32CD32';
+      for (let i = 0; i < canvas.width; i += 15) {
+        ctx.fillRect(i, 375, 2, 5);
+      }
+    }
+    
+    // Actualizar partículas
+    function updateParticles() {
+      gameState.particles = gameState.particles.filter(particle => {
+        particle.update();
+        particle.draw();
+        return particle.life > 0;
+      });
+    }
+    
+    // Crear obstáculos (solo cactus)
+    function createObstacle() {
+      const obstacle = new Obstacle(canvas.width, 340);
+      gameState.obstacles.push(obstacle);
+    }
+    
+    // Crear power-ups
+    function createPowerUp() {
+      const types = ['shield', 'doubleJump', 'invincible', 'slowTime', 'teleport', 'extraLife'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      
+      const powerUp = new PowerUp(canvas.width, 300, type);
+      gameState.powerUps.push(powerUp);
+    }
+    
+    // Función principal del juego mejorada
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Aplicar tema de fondo
+      const currentTheme = gameState.themes[gameState.currentTheme];
+      canvas.style.background = currentTheme.bg;
+      
+      drawGround();
+      drawSteve();
+      drawObstacles();
+      drawPowerUps();
+      updateParticles();
+      
+      if (!gameState.gameOver && !gameState.paused) {
+        // Actualizar Steve
+        const steve = gameState.steve;
+        steve.y += steve.vy;
+        if (steve.y + steve.height < 380) {
+          steve.vy += gameState.gravity;
+        } else {
+          steve.y = 380 - steve.height;
+          steve.vy = 0;
+          steve.jumping = false;
+          steve.doubleJump = false;
+        }
+        
+        // Actualizar obstáculos
+        gameState.obstacles.forEach((obstacle, index) => {
+          obstacle.x -= gameState.speed;
+          
+          // Colisión mejorada
+          if (!steve.invincible && !steve.shield &&
+              steve.x < obstacle.x + obstacle.width &&
+              steve.x + steve.width > obstacle.x &&
+              steve.y < obstacle.y + obstacle.height &&
+              steve.y + steve.height > obstacle.y) {
+            handleCollision(obstacle);
+          }
+        });
+        
+        // Actualizar power-ups
+        gameState.powerUps.forEach((powerUp, index) => {
+          powerUp.x -= gameState.speed;
+          
+          // Colisión con power-up
+          if (steve.x < powerUp.x + powerUp.width &&
+              steve.x + steve.width > powerUp.x &&
+              steve.y < powerUp.y + powerUp.height &&
+              steve.y + steve.height > powerUp.y) {
+            collectPowerUp(powerUp);
+          }
+        });
+        
+        // Remover obstáculos y power-ups fuera de pantalla
+        gameState.obstacles = gameState.obstacles.filter(obstacle => obstacle.x > -obstacle.width);
+        gameState.powerUps = gameState.powerUps.filter(powerUp => powerUp.x > -powerUp.width);
+        
+        // Crear nuevos obstáculos (menos frecuente)
+        if (Math.random() < 0.01) {
+          createObstacle();
+        }
+        
+        // Crear power-ups (más frecuente)
+        if (Math.random() < 0.008) {
+          createPowerUp();
+        }
+        
+        // Incrementar puntaje y distancia
+        gameState.score += gameState.combo;
+        gameState.distance += gameState.speed / 10;
+        gameState.speed = 5 + Math.floor(gameState.score / 200);
+        
+        // Cambiar tema automáticamente
+        if (gameState.score % 1500 === 0) {
+          gameState.currentTheme = (gameState.currentTheme + 1) % gameState.themes.length;
+        }
+        
+        // Actualizar HUD
+        updateHUD();
+      }
+      
+      requestAnimationFrame(gameLoop);
+    }
+    
+    // Manejar colisión mejorada
+    function handleCollision(obstacle) {
+      // Perder una vida
+      gameState.steve.lives--;
+      
+      // Crear explosión pequeña
+      createExplosion(gameState.steve.x + 30, gameState.steve.y + 40);
+      
+      // Hacer Steve invencible temporalmente
+      gameState.steve.invincible = true;
+      setTimeout(() => {
+        gameState.steve.invincible = false;
+      }, 2000);
+      
+      // Verificar si se acabaron las vidas
+      if (gameState.steve.lives <= 0) {
+        gameOver();
+      }
+    }
+    
+    // Recolectar power-up mejorado
+    function collectPowerUp(powerUp) {
+      powerUp.collected = true;
+      
+      // Aplicar efecto
+      switch(powerUp.type) {
+        case 'shield':
+          gameState.steve.shield = true;
+          setTimeout(() => gameState.steve.shield = false, 12000);
+          break;
+        case 'doubleJump':
+          gameState.steve.doubleJump = true;
+          setTimeout(() => gameState.steve.doubleJump = false, 18000);
+          break;
+        case 'invincible':
+          gameState.steve.invincible = true;
+          setTimeout(() => gameState.steve.invincible = false, 10000);
+          break;
+        case 'slowTime':
+          gameState.speed *= 0.6;
+          setTimeout(() => gameState.speed *= 1.67, 8000);
+          break;
+        case 'teleport':
+          gameState.steve.x += 150;
+          break;
+        case 'extraLife':
+          gameState.steve.lives = Math.min(gameState.steve.lives + 1, 5);
+          break;
+      }
+      
+      // Agregar a power-ups activos
+      gameState.activePowerUps.push({
+        type: powerUp.type,
+        endTime: Date.now() + 12000
+      });
+      
+      // Crear partículas de recolección
+      for (let i = 0; i < 15; i++) {
+        gameState.particles.push(new Particle(powerUp.x + 15, powerUp.y + 15, powerUp.colors[powerUp.type], 'magic'));
+      }
+      
+      updatePowerUpIndicator();
+    }
+    
+    // Crear explosión mejorada
+    function createExplosion(x, y) {
+      for (let i = 0; i < 25; i++) {
+        gameState.particles.push(new Particle(x, y, '#FFD700', 'magic'));
+      }
+    }
+    
+    // Game Over mejorado
+    function gameOver() {
+      gameState.gameOver = true;
+      
+      // Crear explosión épica
+      createExplosion(gameState.steve.x + 30, gameState.steve.y + 40);
+      
+      // Actualizar puntuación máxima
+      if (gameState.score > gameState.highScore) {
+        gameState.highScore = gameState.score;
+      }
+      
+      // Mostrar pantalla de game over después de un delay
+      setTimeout(() => {
+        showGameOverScreen();
+      }, 1500);
+    }
+    
+    // Mostrar pantalla de game over mejorada
+    function showGameOverScreen() {
+      ctx.save();
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 48px Orbitron';
+      ctx.textAlign = 'center';
+      ctx.fillText('¡Game Over!', canvas.width / 2, canvas.height / 2 - 60);
+      
+      ctx.font = 'bold 24px Orbitron';
+      ctx.fillText(`Puntaje Final: ${gameState.score}`, canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillText(`Distancia: ${Math.floor(gameState.distance)}m`, canvas.width / 2, canvas.height / 2 + 10);
+      ctx.fillText(`Mejor Puntaje: ${gameState.highScore}`, canvas.width / 2, canvas.height / 2 + 40);
+      ctx.fillText('Presiona ESPACIO para reiniciar', canvas.width / 2, canvas.height / 2 + 80);
+      ctx.restore();
+    }
+    
+    // Actualizar HUD mejorado
+    function updateHUD() {
+      document.getElementById('score').textContent = gameState.score;
+      document.getElementById('distance').textContent = Math.floor(gameState.distance);
+      document.getElementById('combo').textContent = `x${gameState.combo}`;
+      document.getElementById('level').textContent = Math.floor(gameState.score / 100) + 1;
+      document.getElementById('lives').textContent = gameState.steve.lives;
+    }
+    
+    // Actualizar indicador de power-ups
+    function updatePowerUpIndicator() {
+      const indicator = document.getElementById('powerUpIndicator');
+      indicator.innerHTML = '';
+      
+      gameState.activePowerUps.forEach(powerUp => {
+        const div = document.createElement('div');
+        div.className = 'power-up';
+        div.textContent = powerUp.type;
+        indicator.appendChild(div);
+      });
+      
+      indicator.style.display = gameState.activePowerUps.length > 0 ? 'block' : 'none';
+    }
+    
+    // Iniciar juego mejorado
+    function startGame() {
+      gameState.gameStarted = true;
+      gameState.gameOver = false;
+      gameState.score = 0;
+      gameState.distance = 0;
+      gameState.combo = 1;
+      gameState.level = 1;
+      gameState.obstacles = [];
+      gameState.powerUps = [];
+      gameState.particles = [];
+      gameState.activePowerUps = [];
+      
+      // Resetear Steve
+      gameState.steve.x = 50;
+      gameState.steve.y = 320;
+      gameState.steve.vy = 0;
+      gameState.steve.jumping = false;
+      gameState.steve.doubleJump = false;
+      gameState.steve.invincible = false;
+      gameState.steve.shield = false;
+      gameState.steve.lives = 3;
+      
+      // Mostrar HUD y controles
+      document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('gameHud').style.display = 'block';
+      document.getElementById('controlButtons').style.display = 'block';
+      
+      // Iniciar loop del juego
+      gameLoop();
+    }
+    
+    // Reiniciar juego
+    function resetGame() {
+      startGame();
+    }
+    
+    // Controles mejorados
+    document.addEventListener('keydown', function(e) {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        
+        if (gameState.gameOver) {
+          resetGame();
+        } else if (gameState.gameStarted && !gameState.paused) {
+          jump();
+        }
+      }
+    });
+    
+    // Función de salto mejorada
+    function jump() {
+      const steve = gameState.steve;
+      
+      if (!steve.jumping) {
+        steve.vy = gameState.jumpPower;
+        steve.jumping = true;
+        gameState.combo = 1;
+      } else if (steve.doubleJump) {
+        steve.vy = gameState.jumpPower * 0.8;
+        steve.doubleJump = false;
+        gameState.combo++;
+      }
+      
+      // Efectos de partículas
+      if (gameState.magicEffects) {
+        for (let i = 0; i < 8; i++) {
+          gameState.particles.push(new Particle(steve.x + 30, steve.y + 80, '#4ECDC4'));
+        }
+      }
+    }
+    
+    // Controles móviles
+    document.getElementById('jumpBtn').addEventListener('click', jump);
+    document.getElementById('powerBtn').addEventListener('click', () => {
+      // Activar power-up especial
+      if (gameState.activePowerUps.length > 0) {
+        const powerUp = gameState.activePowerUps[0];
+        // Efecto especial según el power-up
+      }
+    });
+    
+    // Funciones del menú
+    function showSettings() {
+      alert('Configuración: Próximamente!');
+    }
+    
+    function showShop() {
+      alert('Tienda: Próximamente!');
+    }
+    
+    function showStats() {
+      alert(`Estadísticas:\nMejor Puntaje: ${gameState.highScore}\nDistancia Total: ${Math.floor(gameState.totalDistance)}m\nSaltos Totales: ${gameState.totalJumps}`);
+    }
+    
+    // Inicializar
+    createBackgroundParticles();
+    gameLoop();
+  </script>
+</body>
+</html>

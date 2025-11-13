@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Motoro</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      background: #000;
+      color: #f0f0f0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background: 
+        /* Esquina superior izquierda */
+        radial-gradient(circle at top left, rgba(255, 0, 153, 0.5) 0%, transparent 8%),
+        /* Esquina superior derecha */
+        radial-gradient(circle at top right, rgba(255, 0, 153, 0.5) 0%, transparent 8%),
+        /* Esquina inferior izquierda */
+        radial-gradient(circle at bottom left, rgba(255, 0, 153, 0.5) 0%, transparent 8%),
+        /* Esquina inferior derecha */
+        radial-gradient(circle at bottom right, rgba(255, 0, 153, 0.5) 0%, transparent 8%),
+        /* Borde superior */
+        linear-gradient(180deg, rgba(255, 0, 153, 0.6) 0%, transparent 6%),
+        /* Borde inferior */
+        linear-gradient(0deg, rgba(255, 0, 153, 0.6) 0%, transparent 6%),
+        /* Borde izquierdo */
+        linear-gradient(90deg, rgba(255, 0, 153, 0.6) 0%, transparent 6%),
+        /* Borde derecho */
+        linear-gradient(270deg, rgba(255, 0, 153, 0.6) 0%, transparent 6%);
+      box-shadow: 
+        inset 0 0 40px rgba(255, 0, 153, 0.25),
+        inset 0 0 20px rgba(0, 0, 0, 0.4),
+        inset 0 0 10px rgba(255, 0, 153, 0.15);
+    }
+    #area-juego {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+    }
+    .cubo {
+      position: absolute;
+      width: 64px;
+      aspect-ratio: 1 / 1;
+      background: linear-gradient(135deg, rgba(255, 0, 153, 0.9), rgba(255, 100, 200, 0.4));
+      border: 4px solid #111;
+      box-shadow:
+        0 0 0 6px rgba(255, 0, 153, 0.1),
+        0 12px 32px rgba(255, 0, 150, 0.35),
+        inset 0 8px 16px rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      transition: transform 140ms ease, filter 140ms ease;
+      --ojo-desvio-x: 0px;
+      --ojo-desvio-y: 0px;
+      z-index: 15;
+    }
+    .cubo.dash {
+      transform: scale(0.734375); /* ≈47px sobre el tamaño base de 64px */
+      filter: brightness(1.35) saturate(1.2);
+      box-shadow:
+        0 0 0 4px rgba(255, 0, 153, 0.18),
+        0 18px 48px rgba(255, 0, 150, 0.45),
+        inset 0 10px 22px rgba(255, 255, 255, 0.22);
+    }
+    .cubo.explotado {
+      transform: scale(0.4) rotate(18deg);
+      filter: brightness(0.55) saturate(0.7);
+      box-shadow:
+        0 0 0 8px rgba(255, 0, 153, 0.25),
+        0 20px 60px rgba(255, 0, 150, 0.5),
+        inset 0 14px 28px rgba(0, 0, 0, 0.35);
+      animation: sacudida 0.35s ease-out;
+    }
+    .cubo::before,
+    .cubo::after {
+      content: '';
+      position: absolute;
+      top: 16px;
+      width: 10px;
+      height: 14px;
+      background: #0a0a0a;
+      border-radius: 12px;
+      box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.12);
+      transform: translate(var(--ojo-desvio-x), var(--ojo-desvio-y));
+      transition: transform 120ms ease;
+      will-change: transform;
+    }
+    .cubo::before {
+      left: 16px;
+    }
+    .cubo::after {
+      right: 16px;
+    }
+
+    .sierra {
+      position: absolute;
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 214, 240, 0.92) 45%, rgba(255, 80, 170, 0.75) 70%, rgba(150, 20, 90, 0.65) 92%);
+      box-shadow:
+        0 0 24px rgba(255, 0, 153, 0.55),
+        inset 0 0 14px rgba(255, 255, 255, 0.65);
+      display: grid;
+      place-items: center;
+      z-index: 15;
+    }
+    .sierra.vertical {
+      background: radial-gradient(circle, rgba(255, 0, 153, 0.95) 0%, rgba(200, 0, 100, 0.9) 30%, rgba(50, 0, 25, 0.85) 60%, rgba(0, 0, 0, 0.9) 100%);
+      box-shadow:
+        0 0 30px rgba(255, 0, 153, 0.7),
+        0 0 60px rgba(255, 0, 153, 0.4),
+        inset 0 0 20px rgba(0, 0, 0, 0.8);
+    }
+    .sierra::before {
+      content: '';
+      position: absolute;
+      width: 78%;
+      height: 78%;
+      background: linear-gradient(180deg, rgba(24, 0, 18, 0.95) 0%, rgba(70, 0, 38, 0.95) 100%);
+      clip-path: polygon(
+        50% 0%, 62% 18%, 88% 18%, 72% 50%, 88% 82%, 62% 82%,
+        50% 100%, 38% 82%, 12% 82%, 28% 50%, 12% 18%, 38% 18%
+      );
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+      animation: girar 1.3s linear infinite;
+    }
+    .sierra::after {
+      content: '';
+      position: absolute;
+      width: 34%;
+      height: 34%;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 0%, #ffe5f5 70%, rgba(255, 160, 210, 0.8) 100%);
+      box-shadow:
+        inset 0 0 12px rgba(0, 0, 0, 0.3),
+        0 0 12px rgba(255, 230, 250, 0.8);
+    }
+
+    .boton-nivel {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 0, 153, 0.9) 0%, rgba(200, 0, 100, 0.8) 40%, rgba(100, 0, 50, 0.7) 70%, rgba(0, 0, 0, 0.9) 100%);
+      border: 6px solid rgba(255, 0, 153, 0.8);
+      box-shadow:
+        0 0 20px rgba(255, 0, 153, 0.6),
+        0 0 40px rgba(255, 0, 153, 0.4),
+        0 0 60px rgba(255, 0, 153, 0.2),
+        inset 0 0 30px rgba(255, 0, 153, 0.5),
+        inset 0 0 60px rgba(255, 255, 255, 0.2);
+      z-index: 8;
+      transition: transform 200ms ease, box-shadow 200ms ease;
+      animation: portalPulse 2s ease-in-out infinite;
+      overflow: hidden;
+    }
+    .boton-nivel.rosa {
+      background: radial-gradient(circle, rgba(255, 0, 153, 0.95) 0%, rgba(200, 0, 100, 0.85) 35%, rgba(100, 0, 50, 0.75) 65%, rgba(0, 0, 0, 0.95) 100%);
+      border: 6px solid rgba(255, 0, 153, 0.9);
+      box-shadow:
+        0 0 25px rgba(255, 0, 153, 0.7),
+        0 0 50px rgba(255, 0, 153, 0.5),
+        0 0 75px rgba(255, 0, 153, 0.3),
+        inset 0 0 35px rgba(255, 0, 153, 0.6),
+        inset 0 0 70px rgba(255, 255, 255, 0.25);
+    }
+    .boton-nivel.rosa:hover {
+      transform: scale(1.1);
+      box-shadow:
+        0 0 30px rgba(255, 0, 153, 0.8),
+        0 0 60px rgba(255, 0, 153, 0.6),
+        0 0 90px rgba(255, 0, 153, 0.4),
+        inset 0 0 40px rgba(255, 0, 153, 0.7),
+        inset 0 0 80px rgba(255, 255, 255, 0.3);
+    }
+    .boton-nivel:hover {
+      transform: scale(1.1);
+      box-shadow:
+        0 0 30px rgba(255, 0, 153, 0.8),
+        0 0 60px rgba(255, 0, 153, 0.6),
+        0 0 90px rgba(255, 0, 153, 0.4),
+        inset 0 0 40px rgba(255, 0, 153, 0.7),
+        inset 0 0 80px rgba(255, 255, 255, 0.3);
+    }
+    .boton-nivel::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: 60%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 200, 240, 0.7) 50%, transparent 100%);
+      animation: portalSpin 3s linear infinite;
+      pointer-events: none;
+    }
+    .boton-nivel::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 30%;
+      height: 30%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 150, 220, 0.8) 70%, transparent 100%);
+      animation: portalSpin 2s linear infinite reverse;
+      pointer-events: none;
+    }
+    
+    @keyframes portalPulse {
+      0%, 100% {
+        box-shadow:
+          0 0 20px rgba(255, 0, 153, 0.6),
+          0 0 40px rgba(255, 0, 153, 0.4),
+          0 0 60px rgba(255, 0, 153, 0.2),
+          inset 0 0 30px rgba(255, 0, 153, 0.5),
+          inset 0 0 60px rgba(255, 255, 255, 0.2);
+      }
+      50% {
+        box-shadow:
+          0 0 30px rgba(255, 0, 153, 0.8),
+          0 0 60px rgba(255, 0, 153, 0.6),
+          0 0 90px rgba(255, 0, 153, 0.4),
+          inset 0 0 40px rgba(255, 0, 153, 0.7),
+          inset 0 0 80px rgba(255, 255, 255, 0.3);
+      }
+    }
+    
+    @keyframes portalSpin {
+      from {
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+      to {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+
+    .boton-nivel.bloqueado {
+      opacity: 0.5;
+      filter: grayscale(80%);
+      cursor: not-allowed;
+    }
+    .boton-nivel:not(.bloqueado) {
+      cursor: pointer;
+    }
+    .boton-nivel.bloqueado::before,
+    .boton-nivel.bloqueado::after {
+      opacity: 0.3;
+    }
+
+    .llave {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      z-index: 12;
+      pointer-events: none;
+      animation: llaveFlotante 2s ease-in-out infinite;
+    }
+    .llave::before {
+      content: '🔑';
+      font-size: 50px;
+      display: block;
+      filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+    }
+    
+    @keyframes llaveFlotante {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
+    }
+
+    .modulo {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 0, 153, 0.95) 0%, rgba(200, 0, 100, 0.9) 30%, rgba(50, 0, 25, 0.85) 60%, rgba(0, 0, 0, 0.9) 100%);
+      box-shadow:
+        0 0 30px rgba(255, 0, 153, 0.7),
+        0 0 60px rgba(255, 0, 153, 0.4),
+        inset 0 0 20px rgba(0, 0, 0, 0.8);
+      z-index: 15;
+      animation: girar 1.3s linear infinite;
+    }
+    .modulo::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70%;
+      height: 70%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 0, 0, 0.9) 0%, rgba(50, 0, 25, 0.8) 40%, transparent 70%);
+      border: 4px solid rgba(255, 0, 153, 0.6);
+    }
+
+    #indicador-nivel {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(24, 24, 36, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px 20px;
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      z-index: 15;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    #palabra-random {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(24px, 4vw, 48px);
+      font-weight: 700;
+      color: rgba(255, 0, 153, 0.995);
+      text-shadow: 
+        0 0 20px rgba(255, 0, 153, 0.8),
+        0 0 40px rgba(255, 0, 153, 0.6),
+        0 4px 8px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+      z-index: 2;
+      text-align: center;
+      letter-spacing: 0.1em;
+      opacity: 0.995;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-transform: uppercase;
+    }
+
+    #game-over {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+      z-index: 25;
+    }
+    #game-over.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #victoria {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.5s ease-in-out;
+      z-index: 30;
+    }
+    #victoria.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #victoria .mensaje {
+      font-size: clamp(48px, 8vw, 96px);
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow:
+        0 0 30px rgba(255, 0, 153, 0.8),
+        0 0 60px rgba(255, 0, 153, 0.6),
+        0 0 90px rgba(255, 0, 153, 0.4),
+        0 4px 12px rgba(0, 0, 0, 0.7);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      opacity: 0;
+      transform: scale(0.8) translateY(20px);
+      animation: aparecerGanaste 2s ease-out forwards;
+    }
+    
+    @keyframes aparecerGanaste {
+      0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    #game-over .panel {
+      background: rgba(24, 24, 36, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 36px 52px;
+      text-align: center;
+      color: #ffffff;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+      min-width: min(420px, 90vw);
+    }
+    #game-over h2 {
+      margin: 0;
+      font-size: clamp(32px, 4vw, 42px);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #ff8ad4;
+    }
+    #game-over p {
+      margin: 14px 0 0 0;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: clamp(16px, 2vw, 18px);
+    }
+    #game-over button {
+      margin-top: 28px;
+      padding: 10px 28px;
+      border: none;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: linear-gradient(135deg, rgba(255, 0, 153, 0.85), rgba(255, 120, 210, 0.85));
+      color: #fff;
+      box-shadow: 0 12px 30px rgba(255, 0, 153, 0.45);
+      transition: transform 160ms ease;
+    }
+    #game-over button:hover {
+      transform: translateY(-2px);
+    }
+
+    @keyframes girar {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    @keyframes sacudida {
+      0% {
+        transform: scale(0.8) rotate(-6deg);
+      }
+      45% {
+        transform: scale(1.05) rotate(6deg);
+      }
+      100% {
+        transform: scale(0.4) rotate(18deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="area-juego">
+    <div class="cubo" id="motoro"></div>
+  </div>
+  <div id="indicador-nivel">Nivel 1</div>
+  <div id="palabra-random"></div>
+  <div id="game-over">
+    <div class="panel">
+      <h2>Game Over</h2>
+      <p>Motoro tocó una sierra y explotó.</p>
+      <p>Presiona R o haz clic en Reintentar para volver a jugar.</p>
+      <button id="reiniciar">Reintentar</button>
+    </div>
+  </div>
+  <div id="victoria">
+    <div class="mensaje">Ganaste</div>
+  </div>
+  <script>
+    (function () {
+      const area = document.getElementById('area-juego');
+      const cubo = document.getElementById('motoro');
+      const overlay = document.getElementById('game-over');
+      const botonReiniciar = document.getElementById('reiniciar');
+
+      const estadoJuego = {
+        gameOver: false,
+        nivelActual: 0,
+        cambiandoNivel: false,
+        victoria: false
+      };
+
+      const indicadorNivel = document.getElementById('indicador-nivel');
+      const palabraRandom = document.getElementById('palabra-random');
+      const victoriaOverlay = document.getElementById('victoria');
+
+      // Lista de palabras graciosas en inglés
+      const palabrasGraciosas = [
+        'BOOP', 'ZOOP', 'WIGGLE', 'SNOOT', 'BEEP', 'BOOP',
+        'BLORP', 'FLOOP', 'SNOOT', 'WIGGLE', 'ZOINK', 'BLIP',
+        'BLOP', 'BOOF', 'WHEE', 'YIPPEE', 'ZOOM', 'WACKY',
+        'SILLY', 'GOOFY', 'WACK', 'ZOOT', 'BLOOP', 'FLOOF',
+        'SNOOT', 'BOINK', 'ZOOT', 'BLIP', 'BLOP', 'WACKY',
+        'WIGGLE', 'SNOOT', 'ZOINK', 'BOOP', 'BLORP', 'FLOOP'
+      ];
+
+      // Función para mostrar una palabra aleatoria
+      function mostrarPalabraAleatoria() {
+        const palabra = palabrasGraciosas[Math.floor(Math.random() * palabrasGraciosas.length)];
+        palabraRandom.textContent = palabra;
+      }
+
+      // Configuración de niveles
+      const niveles = [
+        {
+          // Nivel 1: Con sierras (10 sierras en total) - alejadas del spawn del cubo (centro)
+          sierras: [
+            { px: 0.15, py: 0.15, size: 86 },
+            { px: 0.85, py: 0.20, size: 94 },
+            { px: 0.20, py: 0.85, size: 76 },
+            { px: 0.80, py: 0.80, size: 82 },
+            { px: 0.10, py: 0.30, size: 88 },
+            { px: 0.90, py: 0.70, size: 80 },
+            { px: 0.25, py: 0.10, size: 84 },
+            { px: 0.75, py: 0.90, size: 90 },
+            { px: 0.12, py: 0.75, size: 78 },
+            { px: 0.88, py: 0.25, size: 86 }
+          ],
+          boton: { px: 0.85, py: 0.85, size: 100, color: 'rosa' }
+        },
+        {
+          // Nivel 2: Con sierras verticales rosa/negro ordenadas uniformemente
+          sierras: [
+            { px: 0.20, py: 0.1, size: 90, tipo: 'vertical' },
+            { px: 0.20, py: 0.9, size: 90, tipo: 'vertical' },
+            { px: 0.35, py: 0.1, size: 90, tipo: 'vertical' },
+            { px: 0.35, py: 0.9, size: 90, tipo: 'vertical' },
+            { px: 0.50, py: 0.1, size: 90, tipo: 'vertical' },
+            { px: 0.50, py: 0.9, size: 90, tipo: 'vertical' },
+            { px: 0.65, py: 0.1, size: 90, tipo: 'vertical' },
+            { px: 0.65, py: 0.9, size: 90, tipo: 'vertical' },
+            { px: 0.80, py: 0.1, size: 90, tipo: 'vertical' },
+            { px: 0.80, py: 0.9, size: 90, tipo: 'vertical' }
+          ],
+          boton: { px: 0.85, py: 0.85, size: 100, color: 'rosa', requiereLlave: true },
+          llave: { px: 0.15, py: 0.5, size: 50 }
+        },
+        {
+          // Nivel 3: Modular - módulos que se mueven en patrones
+          sierras: [],
+          modulos: [
+            // Módulos horizontales (se mueven de izquierda a derecha) - muy rápidos
+            { px: 0.1, py: 0.2, width: 120, height: 40, tipo: 'horizontal', velocidad: 7.5 },
+            { px: 0.1, py: 0.5, width: 100, height: 40, tipo: 'horizontal', velocidad: 7.0 },
+            { px: 0.1, py: 0.8, width: 110, height: 40, tipo: 'horizontal', velocidad: 7.3 },
+            // Módulos verticales (se mueven de arriba a abajo) - muy rápidos
+            { px: 0.3, py: 0.1, width: 40, height: 100, tipo: 'vertical', velocidad: 7.2 },
+            { px: 0.5, py: 0.1, width: 40, height: 90, tipo: 'vertical', velocidad: 7.4 },
+            { px: 0.7, py: 0.1, width: 40, height: 95, tipo: 'vertical', velocidad: 7.1 },
+            // Módulos circulares (se mueven en círculo) - muy rápidos
+            { px: 0.5, py: 0.5, width: 80, height: 80, tipo: 'circular', velocidad: 5.5, radio: 100 },
+            { px: 0.8, py: 0.7, width: 70, height: 70, tipo: 'circular', velocidad: 6.0, radio: 80 }
+          ],
+          boton: { px: 0.5, py: 0.5, size: 100, color: 'rosa' },
+          spawnSeguro: { px: 0.05, py: 0.05 } // Esquina superior izquierda - posición segura (lejos de todos los módulos)
+        }
+      ];
+
+      const teclasActivas = new Set();
+      const ojoDesvioMax = 4; // píxeles
+      
+      // Estado de la llave
+      const estadoLlave = {
+        recogida: false,
+        element: null,
+        px: 0,
+        py: 0,
+        size: 50
+      };
+      const dash = {
+        duracion: 400, // ms
+        cooldown: 5000, // ms
+        factorVelocidad: 2.5,
+        incrementoExtra: 1.25,
+        activo: false,
+        disponible: true,
+        timeoutActivo: null,
+        timeoutCooldown: null
+      };
+      const estado = {
+        velocidadBase: 4.5,
+        velocidadActual: 4.5
+      };
+
+      const sierras = [];
+      const modulos = [];
+      const botonNivel = {
+        px: 0,
+        py: 0,
+        size: 80,
+        element: null,
+        requiereLlave: false
+      };
+
+      let limite = { ancho: area.clientWidth, alto: area.clientHeight };
+      let tamanoCubo = cubo.getBoundingClientRect().width;
+      let posicion = {
+        x: (limite.ancho - tamanoCubo) / 2,
+        y: (limite.alto - tamanoCubo) / 2
+      };
+
+      function clamp(valor, minimo, maximo) {
+        return Math.min(Math.max(valor, minimo), maximo);
+      }
+
+      function limpiarNivel() {
+        // Eliminar todas las sierras
+        sierras.forEach((sierra) => {
+          if (sierra.element && sierra.element.parentNode) {
+            sierra.element.parentNode.removeChild(sierra.element);
+          }
+        });
+        sierras.length = 0;
+
+        // Eliminar todos los módulos
+        modulos.forEach((modulo) => {
+          if (modulo.element && modulo.element.parentNode) {
+            modulo.element.parentNode.removeChild(modulo.element);
+          }
+        });
+        modulos.length = 0;
+
+        // Eliminar el botón
+        if (botonNivel.element && botonNivel.element.parentNode) {
+          botonNivel.element.parentNode.removeChild(botonNivel.element);
+          botonNivel.element = null;
+        }
+        
+        // Eliminar la llave si existe
+        if (estadoLlave.element && estadoLlave.element.parentNode) {
+          estadoLlave.element.parentNode.removeChild(estadoLlave.element);
+          estadoLlave.element = null;
+        }
+        estadoLlave.recogida = false;
+      }
+
+      function crearSierras() {
+        const nivel = niveles[estadoJuego.nivelActual];
+        nivel.sierras.forEach((config) => {
+          // Generar posición inicial aleatoria
+          const px = config.px || Math.random();
+          const py = config.py || Math.random();
+          
+          let vx, vy, velocidad;
+          
+          // Si es una sierra vertical, solo se mueve verticalmente
+          if (config.tipo === 'vertical') {
+            velocidad = 8.5; // Velocidad fija para sierras verticales
+            vx = 0; // No se mueve horizontalmente
+            // Si está en la parte superior (py < 0.5), va hacia abajo; si está en la inferior, va hacia arriba
+            vy = (config.py < 0.5) ? velocidad : -velocidad;
+          } else {
+            // Generar velocidad aleatoria entre 1.25 y 5.0 píxeles por frame, con máximo de 8.5
+            velocidad = Math.min((0.5 + Math.random() * 2) * 2.5, 8.5);
+            
+            // Generar dirección aleatoria
+            const angulo = Math.random() * Math.PI * 2;
+            vx = Math.cos(angulo) * velocidad;
+            vy = Math.sin(angulo) * velocidad;
+          }
+          
+          const sierra = {
+            px: px,
+            py: py,
+            size: config.size,
+            tipo: config.tipo || 'normal',
+            x: 0, // Posición en píxeles (se calculará)
+            y: 0, // Posición en píxeles (se calculará)
+            vx: vx, // Velocidad en X
+            vy: vy, // Velocidad en Y
+            velocidad: velocidad,
+            element: null
+          };
+          const nodo = document.createElement('div');
+          nodo.className = config.tipo === 'vertical' ? 'sierra vertical' : 'sierra';
+          nodo.style.width = sierra.size + 'px';
+          nodo.style.height = sierra.size + 'px';
+          area.appendChild(nodo);
+          sierra.element = nodo;
+          sierras.push(sierra);
+        });
+      }
+
+      function crearBotonNivel() {
+        const nivel = niveles[estadoJuego.nivelActual];
+        
+        // Solo crear el botón si está definido en la configuración del nivel
+        if (!nivel.boton) {
+          return; // No hay botón en este nivel
+        }
+        
+        botonNivel.px = nivel.boton.px;
+        botonNivel.py = nivel.boton.py;
+        // Portal siempre tiene tamaño fijo de 100px
+        botonNivel.size = 100;
+        botonNivel.requiereLlave = nivel.boton.requiereLlave || false;
+
+        const nodo = document.createElement('div');
+        // Todos los botones son portales rosa ahora
+        nodo.className = 'boton-nivel rosa';
+        if (botonNivel.requiereLlave && !estadoLlave.recogida) {
+          nodo.classList.add('bloqueado');
+        }
+        nodo.style.width = botonNivel.size + 'px';
+        nodo.style.height = botonNivel.size + 'px';
+        
+        // Añadir event listener para click cuando requiere llave
+        if (botonNivel.requiereLlave) {
+          nodo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (estadoLlave.recogida && !estadoJuego.cambiandoNivel && !estadoJuego.gameOver) {
+              cambiarNivel();
+            }
+          });
+        }
+        
+        area.appendChild(nodo);
+        botonNivel.element = nodo;
+      }
+      
+      function crearLlave() {
+        const nivel = niveles[estadoJuego.nivelActual];
+        if (!nivel.llave) {
+          return; // No hay llave en este nivel
+        }
+        
+        estadoLlave.px = nivel.llave.px;
+        estadoLlave.py = nivel.llave.py;
+        estadoLlave.size = nivel.llave.size || 50;
+        estadoLlave.recogida = false;
+        
+        const nodo = document.createElement('div');
+        nodo.className = 'llave';
+        nodo.style.width = estadoLlave.size + 'px';
+        nodo.style.height = estadoLlave.size + 'px';
+        area.appendChild(nodo);
+        estadoLlave.element = nodo;
+      }
+      
+      function posicionarLlave() {
+        if (!estadoLlave.element) return;
+        
+        const x = limite.ancho * estadoLlave.px - estadoLlave.size / 2;
+        const y = limite.alto * estadoLlave.py - estadoLlave.size / 2;
+        
+        estadoLlave.element.style.left = x + 'px';
+        estadoLlave.element.style.top = y + 'px';
+      }
+      
+      function hayColisionConLlave() {
+        if (!estadoLlave.element || estadoLlave.recogida) return false;
+        
+        const llaveLeft = parseFloat(estadoLlave.element.style.left) || 0;
+        const llaveTop = parseFloat(estadoLlave.element.style.top) || 0;
+        const llaveRight = llaveLeft + estadoLlave.size;
+        const llaveBottom = llaveTop + estadoLlave.size;
+        
+        const cuboLeft = posicion.x;
+        const cuboTop = posicion.y;
+        const cuboRight = cuboLeft + tamanoCubo;
+        const cuboBottom = cuboTop + tamanoCubo;
+        
+        return (
+          cuboLeft < llaveRight &&
+          cuboRight > llaveLeft &&
+          cuboTop < llaveBottom &&
+          cuboBottom > llaveTop
+        );
+      }
+      
+      function recogerLlave() {
+        if (estadoLlave.recogida) return;
+        estadoLlave.recogida = true;
+        if (estadoLlave.element && estadoLlave.element.parentNode) {
+          estadoLlave.element.parentNode.removeChild(estadoLlave.element);
+          estadoLlave.element = null;
+        }
+        
+        // Desbloquear el portal
+        if (botonNivel.element && botonNivel.requiereLlave) {
+          botonNivel.element.classList.remove('bloqueado');
+        }
+      }
+
+      function inicializarPosicionesSierras() {
+        sierras.forEach((sierra) => {
+          if (!sierra.element) return;
+          const maxX = Math.max(limite.ancho - sierra.size - 24, 24);
+          const maxY = Math.max(limite.alto - sierra.size - 24, 24);
+          const left = clamp(limite.ancho * sierra.px - sierra.size / 2, 24, maxX);
+          const top = clamp(limite.alto * sierra.py - sierra.size / 2, 24, maxY);
+          sierra.x = left;
+          sierra.y = top;
+          sierra.element.style.left = left + 'px';
+          sierra.element.style.top = top + 'px';
+        });
+      }
+      
+      function crearModulos() {
+        const nivel = niveles[estadoJuego.nivelActual];
+        if (!nivel.modulos) {
+          return; // No hay módulos en este nivel
+        }
+        
+        nivel.modulos.forEach((config) => {
+          const modulo = {
+            px: config.px || 0.5,
+            py: config.py || 0.5,
+            width: config.width || 80,
+            height: config.height || 80,
+            tipo: config.tipo || 'horizontal',
+            velocidad: config.velocidad || 2.0,
+            radio: config.radio || 100,
+            x: 0, // Posición en píxeles
+            y: 0, // Posición en píxeles
+            xInicial: 0, // Posición inicial para módulos circulares
+            yInicial: 0, // Posición inicial para módulos circulares
+            angulo: 0, // Ángulo para módulos circulares
+            direccion: config.tipo === 'horizontal' ? 1 : (config.tipo === 'vertical' ? 1 : 0),
+            element: null
+          };
+          
+          const nodo = document.createElement('div');
+          nodo.className = 'modulo';
+          nodo.style.width = modulo.width + 'px';
+          nodo.style.height = modulo.height + 'px';
+          area.appendChild(nodo);
+          modulo.element = nodo;
+          modulos.push(modulo);
+        });
+      }
+      
+      function posicionarModulos() {
+        modulos.forEach((modulo) => {
+          if (!modulo.element) return;
+          
+          // Inicializar posiciones basadas en px/py
+          if (modulo.x === 0 && modulo.y === 0) {
+            modulo.xInicial = limite.ancho * modulo.px - modulo.width / 2;
+            modulo.yInicial = limite.alto * modulo.py - modulo.height / 2;
+            modulo.x = modulo.xInicial;
+            modulo.y = modulo.yInicial;
+          }
+          
+          modulo.element.style.left = modulo.x + 'px';
+          modulo.element.style.top = modulo.y + 'px';
+        });
+      }
+      
+      function actualizarModulos() {
+        if (estadoJuego.gameOver || estadoJuego.nivelActual !== 2) return; // Solo nivel 3 (índice 2)
+        
+        modulos.forEach((modulo) => {
+          if (!modulo.element) return;
+          
+          switch (modulo.tipo) {
+            case 'horizontal':
+              modulo.x += modulo.velocidad * modulo.direccion;
+              // Rebotar en los bordes
+              if (modulo.x + modulo.width > limite.ancho - 24) {
+                modulo.x = limite.ancho - modulo.width - 24;
+                modulo.direccion = -1;
+              } else if (modulo.x < 24) {
+                modulo.x = 24;
+                modulo.direccion = 1;
+              }
+              break;
+              
+            case 'vertical':
+              modulo.y += modulo.velocidad * modulo.direccion;
+              // Rebotar en los bordes
+              if (modulo.y + modulo.height > limite.alto - 24) {
+                modulo.y = limite.alto - modulo.height - 24;
+                modulo.direccion = -1;
+              } else if (modulo.y < 24) {
+                modulo.y = 24;
+                modulo.direccion = 1;
+              }
+              break;
+              
+            case 'circular':
+              modulo.angulo += modulo.velocidad * 0.02; // Incremento angular
+              modulo.x = modulo.xInicial + Math.cos(modulo.angulo) * modulo.radio;
+              modulo.y = modulo.yInicial + Math.sin(modulo.angulo) * modulo.radio;
+              break;
+          }
+          
+          modulo.element.style.left = modulo.x + 'px';
+          modulo.element.style.top = modulo.y + 'px';
+        });
+      }
+      
+      function hayColisionConModulos() {
+        if (modulos.length === 0 || estadoJuego.nivelActual !== 2) return false;
+        
+        const cuboLeft = posicion.x;
+        const cuboTop = posicion.y;
+        const cuboRight = cuboLeft + tamanoCubo;
+        const cuboBottom = cuboTop + tamanoCubo;
+        
+        return modulos.some((modulo) => {
+          if (!modulo.element) return false;
+          
+          const moduloLeft = modulo.x;
+          const moduloTop = modulo.y;
+          const moduloRight = moduloLeft + modulo.width;
+          const moduloBottom = moduloTop + modulo.height;
+          
+          return (
+            cuboLeft < moduloRight &&
+            cuboRight > moduloLeft &&
+            cuboTop < moduloBottom &&
+            cuboBottom > moduloTop
+          );
+        });
+      }
+
+      function detectarColisionSierras(sierra1, sierra2) {
+        // Calcular centros de las sierras (son círculos)
+        const centro1X = sierra1.x + sierra1.size / 2;
+        const centro1Y = sierra1.y + sierra1.size / 2;
+        const centro2X = sierra2.x + sierra2.size / 2;
+        const centro2Y = sierra2.y + sierra2.size / 2;
+        
+        // Calcular distancia entre centros
+        const distanciaX = centro2X - centro1X;
+        const distanciaY = centro2Y - centro1Y;
+        const distancia = Math.hypot(distanciaX, distanciaY);
+        
+        // Radio combinado (suma de los radios)
+        const radio1 = sierra1.size / 2;
+        const radio2 = sierra2.size / 2;
+        const radioCombinado = radio1 + radio2;
+        
+        // Hay colisión si la distancia es menor que la suma de los radios
+        return distancia < radioCombinado;
+      }
+
+      function resolverColisionSierras(sierra1, sierra2) {
+        // Calcular centros
+        const centro1X = sierra1.x + sierra1.size / 2;
+        const centro1Y = sierra1.y + sierra1.size / 2;
+        const centro2X = sierra2.x + sierra2.size / 2;
+        const centro2Y = sierra2.y + sierra2.size / 2;
+        
+        // Vector de distancia
+        const dx = centro2X - centro1X;
+        const dy = centro2Y - centro1Y;
+        const distancia = Math.hypot(dx, dy);
+        
+        if (distancia === 0) return; // Evitar división por cero
+        
+        // Normalizar el vector de distancia
+        const nx = dx / distancia;
+        const ny = dy / distancia;
+        
+        // Separar las sierras para evitar que se superpongan
+        const radio1 = sierra1.size / 2;
+        const radio2 = sierra2.size / 2;
+        const solapamiento = (radio1 + radio2) - distancia;
+        
+        if (solapamiento > 0) {
+          // Mover las sierras para separarlas
+          const separacionX = nx * solapamiento * 0.5;
+          const separacionY = ny * solapamiento * 0.5;
+          
+          sierra1.x -= separacionX;
+          sierra1.y -= separacionY;
+          sierra2.x += separacionX;
+          sierra2.y += separacionY;
+        }
+        
+        // Calcular velocidad relativa
+        const dvx = sierra2.vx - sierra1.vx;
+        const dvy = sierra2.vy - sierra1.vy;
+        
+        // Calcular velocidad relativa en la dirección de la normal
+        const velocidadRelativa = dvx * nx + dvy * ny;
+        
+        // No hacer nada si las sierras se están separando
+        if (velocidadRelativa > 0) return;
+        
+        // Coeficiente de restitución (rebote elástico)
+        const restitucion = 0.9;
+        
+        // Calcular impulso
+        const impulso = velocidadRelativa * restitucion;
+        
+        // Aplicar impulso a las velocidades
+        sierra1.vx += impulso * nx;
+        sierra1.vy += impulso * ny;
+        sierra2.vx -= impulso * nx;
+        sierra2.vy -= impulso * ny;
+      }
+
+      function actualizarSierras() {
+        // Mover sierras según el nivel
+        if (estadoJuego.gameOver) return;
+        
+        // Primero, actualizar posiciones
+        sierras.forEach((sierra) => {
+          if (!sierra.element) return;
+          
+          // Si es una sierra vertical (nivel 2), movimiento especial
+          if (sierra.tipo === 'vertical') {
+            // Mantener velocidad constante (8.5 píxeles/frame)
+            const velocidadConstante = 8.5;
+            // Asegurar que la velocidad mantenga su magnitud constante
+            if (sierra.vy > 0) {
+              sierra.vy = velocidadConstante;
+            } else {
+              sierra.vy = -velocidadConstante;
+            }
+            
+            sierra.y += sierra.vy;
+            
+            // Límites de la pantalla
+            const minY = 24;
+            const maxY = limite.alto - sierra.size - 24;
+            
+            // Rebotar en los bordes superior e inferior
+            if (sierra.y < minY) {
+              sierra.y = minY;
+              sierra.vy = velocidadConstante; // Cambiar dirección hacia abajo, velocidad constante
+            } else if (sierra.y > maxY) {
+              sierra.y = maxY;
+              sierra.vy = -velocidadConstante; // Cambiar dirección hacia arriba, velocidad constante
+            }
+            
+            // Aplicar posición
+            sierra.element.style.left = sierra.x + 'px';
+            sierra.element.style.top = sierra.y + 'px';
+            return; // No procesar más para sierras verticales
+          }
+          
+          // Para sierras normales (nivel 1), movimiento aleatorio
+          if (estadoJuego.nivelActual !== 0) return;
+          
+          // Actualizar posición
+          sierra.x += sierra.vx;
+          sierra.y += sierra.vy;
+        });
+        
+        // Detectar y resolver colisiones entre sierras
+        for (let i = 0; i < sierras.length; i++) {
+          for (let j = i + 1; j < sierras.length; j++) {
+            const sierra1 = sierras[i];
+            const sierra2 = sierras[j];
+            
+            if (!sierra1.element || !sierra2.element || estadoJuego.gameOver) continue;
+            
+            if (detectarColisionSierras(sierra1, sierra2)) {
+              resolverColisionSierras(sierra1, sierra2);
+            }
+          }
+        }
+        
+        // Aplicar límites de pantalla y rebotes (solo para sierras normales del nivel 1)
+        sierras.forEach((sierra) => {
+          if (!sierra.element || estadoJuego.gameOver || sierra.tipo === 'vertical') return;
+          
+          // Límites de la pantalla
+          const minX = 24;
+          const minY = 24;
+          const maxX = limite.ancho - sierra.size - 24;
+          const maxY = limite.alto - sierra.size - 24;
+          
+          // Rebotar en los bordes con mayor precisión
+          if (sierra.x < minX) {
+            sierra.x = minX;
+            sierra.vx = Math.abs(sierra.vx) * 0.95; // Rebote con pérdida de energía mínima
+            sierra.vx += (Math.random() - 0.5) * 0.3; // Pequeña aleatoriedad
+          } else if (sierra.x > maxX) {
+            sierra.x = maxX;
+            sierra.vx = -Math.abs(sierra.vx) * 0.95;
+            sierra.vx += (Math.random() - 0.5) * 0.3;
+          }
+          
+          if (sierra.y < minY) {
+            sierra.y = minY;
+            sierra.vy = Math.abs(sierra.vy) * 0.95;
+            sierra.vy += (Math.random() - 0.5) * 0.3;
+          } else if (sierra.y > maxY) {
+            sierra.y = maxY;
+            sierra.vy = -Math.abs(sierra.vy) * 0.95;
+            sierra.vy += (Math.random() - 0.5) * 0.3;
+          }
+          
+          // Asegurar que las velocidades no sean demasiado lentas
+          if (Math.abs(sierra.vx) < 0.3) {
+            sierra.vx = (Math.random() > 0.5 ? 1 : -1) * Math.min((0.5 + Math.random() * 1.5) * 2.5, 8.5);
+          }
+          if (Math.abs(sierra.vy) < 0.3) {
+            sierra.vy = (Math.random() > 0.5 ? 1 : -1) * Math.min((0.5 + Math.random() * 1.5) * 2.5, 8.5);
+          }
+          
+          // Ocasionalmente cambiar dirección aleatoriamente (para movimiento más orgánico)
+          if (Math.random() < 0.005) { // 0.5% de probabilidad por frame
+            const angulo = Math.random() * Math.PI * 2;
+            sierra.vx = Math.cos(angulo) * sierra.velocidad;
+            sierra.vy = Math.sin(angulo) * sierra.velocidad;
+          }
+          
+          // Limitar velocidad máxima a 8.5 píxeles/frame
+          const velocidadMax = Math.hypot(sierra.vx, sierra.vy);
+          if (velocidadMax > 8.5) {
+            sierra.vx = (sierra.vx / velocidadMax) * 8.5;
+            sierra.vy = (sierra.vy / velocidadMax) * 8.5;
+          }
+          
+          // Aplicar posición
+          sierra.element.style.left = sierra.x + 'px';
+          sierra.element.style.top = sierra.y + 'px';
+        });
+      }
+
+      function posicionarBotonNivel() {
+        // Solo posicionar si el botón existe y hay configuración para este nivel
+        if (!botonNivel.element) return;
+        const nivel = niveles[estadoJuego.nivelActual];
+        if (!nivel.boton) return;
+        
+        const maxX = Math.max(limite.ancho - botonNivel.size - 24, 24);
+        const maxY = Math.max(limite.alto - botonNivel.size - 24, 24);
+        const left = clamp(limite.ancho * botonNivel.px - botonNivel.size / 2, 24, maxX);
+        const top = clamp(limite.alto * botonNivel.py - botonNivel.size / 2, 24, maxY);
+        botonNivel.element.style.left = left + 'px';
+        botonNivel.element.style.top = top + 'px';
+      }
+
+      function fijarPosicion() {
+        cubo.style.left = posicion.x + 'px';
+        cubo.style.top = posicion.y + 'px';
+      }
+
+
+      function limitarPosicion() {
+        // Limitar solo por bordes de la pantalla (el botón es atravesable)
+        posicion.x = clamp(posicion.x, 0, limite.ancho - tamanoCubo);
+        posicion.y = clamp(posicion.y, 0, limite.alto - tamanoCubo);
+      }
+
+      function actualizarLimites() {
+        limite = { ancho: area.clientWidth, alto: area.clientHeight };
+        tamanoCubo = cubo.getBoundingClientRect().width;
+        limitarPosicion();
+        inicializarPosicionesSierras();
+        posicionarModulos();
+        posicionarBotonNivel();
+        posicionarLlave();
+        fijarPosicion();
+      }
+
+      function obtenerVectorDireccion() {
+        let dx = 0;
+        let dy = 0;
+        if (teclasActivas.has('KeyD')) dx += 1;
+        if (teclasActivas.has('KeyA')) dx -= 1;
+        if (teclasActivas.has('KeyS')) dy += 1;
+        if (teclasActivas.has('KeyW')) dy -= 1;
+        const longitud = Math.hypot(dx, dy);
+        return { dx, dy, longitud };
+      }
+
+      function actualizarOjos(vector) {
+        if (vector.longitud > 0) {
+          const offsetX = (vector.dx / vector.longitud) * ojoDesvioMax;
+          const offsetY = (vector.dy / vector.longitud) * ojoDesvioMax;
+          cubo.style.setProperty('--ojo-desvio-x', offsetX.toFixed(2) + 'px');
+          cubo.style.setProperty('--ojo-desvio-y', offsetY.toFixed(2) + 'px');
+        } else {
+          cubo.style.setProperty('--ojo-desvio-x', '0px');
+          cubo.style.setProperty('--ojo-desvio-y', '0px');
+        }
+      }
+
+      function limpiarTimersDash() {
+        if (dash.timeoutActivo) {
+          clearTimeout(dash.timeoutActivo);
+          dash.timeoutActivo = null;
+        }
+        if (dash.timeoutCooldown) {
+          clearTimeout(dash.timeoutCooldown);
+          dash.timeoutCooldown = null;
+        }
+      }
+
+      function finalizarDash() {
+        dash.activo = false;
+        estado.velocidadActual = estado.velocidadBase + dash.incrementoExtra;
+        cubo.classList.remove('dash');
+      }
+
+      function habilitarDash() {
+        dash.disponible = true;
+      }
+
+      function iniciarDash() {
+        dash.activo = true;
+        dash.disponible = false;
+        estado.velocidadActual = (estado.velocidadBase + dash.incrementoExtra) * dash.factorVelocidad;
+        cubo.classList.add('dash');
+
+        limpiarTimersDash();
+        dash.timeoutActivo = setTimeout(() => {
+          finalizarDash();
+        }, dash.duracion);
+        dash.timeoutCooldown = setTimeout(() => {
+          dash.disponible = true;
+        }, dash.cooldown);
+      }
+
+      function hayColisionConSierras() {
+        // Verificar colisiones en todos los niveles que tengan sierras
+        if (sierras.length === 0) return false;
+        
+        const cuboRect = cubo.getBoundingClientRect();
+        return sierras.some((sierra) => {
+          if (!sierra.element) return false;
+          // Usar las coordenadas almacenadas en lugar de getBoundingClientRect para mejor precisión
+          const sierraLeft = sierra.x;
+          const sierraTop = sierra.y;
+          const sierraRight = sierraLeft + sierra.size;
+          const sierraBottom = sierraTop + sierra.size;
+          
+          const cuboLeft = posicion.x;
+          const cuboTop = posicion.y;
+          const cuboRight = cuboLeft + tamanoCubo;
+          const cuboBottom = cuboTop + tamanoCubo;
+          
+          return (
+            cuboLeft < sierraRight &&
+            cuboRight > sierraLeft &&
+            cuboTop < sierraBottom &&
+            cuboBottom > sierraTop
+          );
+        });
+      }
+
+      function estaEncimaDelBoton() {
+        if (!botonNivel.element || estadoJuego.cambiandoNivel) return false;
+        
+        // Obtener posición del botón usando coordenadas del estilo
+        const botonLeft = parseFloat(botonNivel.element.style.left) || 0;
+        const botonTop = parseFloat(botonNivel.element.style.top) || 0;
+        const botonRight = botonLeft + botonNivel.size;
+        const botonBottom = botonTop + botonNivel.size;
+        
+        // Calcular centro del cubo
+        const centroCuboX = posicion.x + tamanoCubo / 2;
+        const centroCuboY = posicion.y + tamanoCubo / 2;
+        const centroBotonX = botonLeft + botonNivel.size / 2;
+        const centroBotonY = botonTop + botonNivel.size / 2;
+
+        // Verificar si el centro del cubo está dentro del área del botón
+        const distanciaX = Math.abs(centroCuboX - centroBotonX);
+        const distanciaY = Math.abs(centroCuboY - centroBotonY);
+        
+        // Umbral más generoso para facilitar la activación
+        const umbralX = botonNivel.size * 0.5; // 50% del ancho del botón
+        const umbralY = botonNivel.size * 0.5; // 50% del alto del botón
+
+        // Verificar que el centro del cubo esté dentro del área del botón
+        return distanciaX < umbralX && distanciaY < umbralY;
+      }
+
+      function cambiarNivel() {
+        if (estadoJuego.cambiandoNivel) return;
+        estadoJuego.cambiandoNivel = true;
+
+        estadoJuego.nivelActual++;
+        
+        // Si se completó el nivel 3 (intentando ir al nivel 4), mostrar victoria
+        if (estadoJuego.nivelActual >= niveles.length) {
+          mostrarVictoria();
+          return; // No continuar con el cambio de nivel
+        }
+
+        // Limpiar el nivel anterior
+        limpiarNivel();
+
+        // Crear nuevo nivel
+        crearSierras();
+        
+        // Crear módulos si el nivel los tiene
+        const nivel = niveles[estadoJuego.nivelActual];
+        if (nivel.modulos) {
+          crearModulos();
+        }
+        
+        // Solo crear botón si el nivel lo tiene configurado
+        if (nivel.boton) {
+          crearBotonNivel();
+        }
+        
+        // Crear llave si el nivel la tiene
+        if (nivel.llave) {
+          crearLlave();
+        }
+        
+        actualizarLimites();
+        // Inicializar posiciones de las sierras después de actualizar límites
+        inicializarPosicionesSierras();
+        posicionarModulos();
+        posicionarLlave();
+
+        // Reposicionar el cubo según la configuración del nivel
+        if (nivel.spawnSeguro) {
+          // Si el nivel tiene una posición segura definida, usarla
+          posicion = {
+            x: limite.ancho * nivel.spawnSeguro.px - tamanoCubo / 2,
+            y: limite.alto * nivel.spawnSeguro.py - tamanoCubo / 2
+          };
+          // Asegurar que esté dentro de los límites
+          posicion.x = clamp(posicion.x, 0, limite.ancho - tamanoCubo);
+          posicion.y = clamp(posicion.y, 0, limite.alto - tamanoCubo);
+        } else {
+          // Si no, usar el centro por defecto
+          posicion = {
+            x: (limite.ancho - tamanoCubo) / 2,
+            y: (limite.alto - tamanoCubo) / 2
+          };
+        }
+        fijarPosicion();
+
+        // Actualizar indicador
+        indicadorNivel.textContent = `Nivel ${estadoJuego.nivelActual + 1}`;
+
+        // Resetear dash
+        limpiarTimersDash();
+        dash.disponible = true;
+        dash.activo = false;
+
+        // Permitir cambiar de nivel nuevamente después de un pequeño delay
+        setTimeout(() => {
+          estadoJuego.cambiandoNivel = false;
+        }, 500);
+      }
+
+      function desencadenarGameOver() {
+        if (estadoJuego.gameOver || estadoJuego.victoria) return;
+        estadoJuego.gameOver = true;
+        teclasActivas.clear();
+        limpiarTimersDash();
+        dash.activo = false;
+        dash.disponible = false;
+        estado.velocidadActual = estado.velocidadBase + dash.incrementoExtra;
+        cubo.classList.remove('dash');
+        cubo.classList.add('explotado');
+        overlay.classList.add('visible');
+      }
+
+      function mostrarVictoria() {
+        if (estadoJuego.victoria || estadoJuego.gameOver) return;
+        estadoJuego.victoria = true;
+        estadoJuego.gameOver = true; // También prevenir movimiento
+        teclasActivas.clear();
+        limpiarTimersDash();
+        dash.activo = false;
+        dash.disponible = false;
+        estado.velocidadActual = estado.velocidadBase + dash.incrementoExtra;
+        cubo.classList.remove('dash');
+        
+        // Centrar el cubo en la pantalla
+        posicion = {
+          x: (limite.ancho - tamanoCubo) / 2,
+          y: (limite.alto - tamanoCubo) / 2
+        };
+        fijarPosicion();
+        
+        // Mostrar mensaje de victoria con animación lenta
+        setTimeout(() => {
+          victoriaOverlay.classList.add('visible');
+        }, 100);
+      }
+
+      function reiniciarJuego() {
+        if (!estadoJuego.gameOver && !estadoJuego.victoria) return;
+        estadoJuego.gameOver = false;
+        estadoJuego.victoria = false;
+        estadoJuego.nivelActual = 0;
+        estadoJuego.cambiandoNivel = false;
+        teclasActivas.clear();
+        limpiarTimersDash();
+        dash.disponible = true;
+        dash.activo = false;
+        estado.velocidadActual = estado.velocidadBase + dash.incrementoExtra;
+        cubo.classList.remove('dash', 'explotado');
+        overlay.classList.remove('visible');
+        victoriaOverlay.classList.remove('visible');
+        
+        // Limpiar y recrear nivel
+        limpiarNivel();
+        crearSierras();
+        
+        // Crear módulos si el nivel los tiene
+        const nivel = niveles[estadoJuego.nivelActual];
+        if (nivel.modulos) {
+          crearModulos();
+        }
+        
+        // Solo crear botón si el nivel lo tiene configurado
+        if (nivel.boton) {
+          crearBotonNivel();
+        }
+        
+        // Crear llave si el nivel la tiene
+        if (nivel.llave) {
+          crearLlave();
+        }
+        
+        limite = { ancho: area.clientWidth, alto: area.clientHeight };
+        tamanoCubo = cubo.getBoundingClientRect().width;
+        
+        // Reposicionar el cubo según la configuración del nivel
+        if (nivel.spawnSeguro) {
+          // Si el nivel tiene una posición segura definida, usarla
+          posicion = {
+            x: limite.ancho * nivel.spawnSeguro.px - tamanoCubo / 2,
+            y: limite.alto * nivel.spawnSeguro.py - tamanoCubo / 2
+          };
+          // Asegurar que esté dentro de los límites
+          posicion.x = clamp(posicion.x, 0, limite.ancho - tamanoCubo);
+          posicion.y = clamp(posicion.y, 0, limite.alto - tamanoCubo);
+        } else {
+          // Si no, usar el centro por defecto
+          posicion = {
+            x: (limite.ancho - tamanoCubo) / 2,
+            y: (limite.alto - tamanoCubo) / 2
+          };
+        }
+        
+        inicializarPosicionesSierras();
+        posicionarModulos();
+        posicionarBotonNivel();
+        posicionarLlave();
+        fijarPosicion();
+        indicadorNivel.textContent = `Nivel ${estadoJuego.nivelActual + 1}`;
+      }
+
+      window.addEventListener('resize', actualizarLimites);
+
+      window.addEventListener('keydown', (evento) => {
+        if (evento.code === 'KeyR') {
+          reiniciarJuego();
+          evento.preventDefault();
+          return;
+        }
+        if (estadoJuego.gameOver) return;
+
+        if (evento.code === 'Space') {
+          if (!dash.activo && dash.disponible) {
+            iniciarDash();
+          }
+          evento.preventDefault();
+          return;
+        }
+
+        if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(evento.code)) {
+          teclasActivas.add(evento.code);
+          evento.preventDefault();
+        }
+      });
+
+      window.addEventListener('keyup', (evento) => {
+        if (teclasActivas.has(evento.code)) {
+          teclasActivas.delete(evento.code);
+        }
+      });
+
+      botonReiniciar.addEventListener('click', reiniciarJuego);
+
+      function bucle() {
+        // No permitir movimiento si hay victoria o game over
+        if (estadoJuego.victoria || estadoJuego.gameOver) {
+          if (!estadoJuego.victoria) {
+            // Solo actualizar animaciones si no hay victoria
+            actualizarOjos({ dx: 0, dy: 0, longitud: 0 });
+          }
+          requestAnimationFrame(bucle);
+          return;
+        }
+        
+        const vector = obtenerVectorDireccion();
+        if (vector.longitud > 0) {
+          const velocidad = dash.activo ? estado.velocidadActual : estado.velocidadBase + dash.incrementoExtra;
+          const pasoX = (vector.dx / vector.longitud) * velocidad;
+          const pasoY = (vector.dy / vector.longitud) * velocidad;
+          
+          // Movimiento libre (el botón es atravesable)
+          posicion.x += pasoX;
+          posicion.y += pasoY;
+          limitarPosicion();
+          fijarPosicion();
+        } else {
+          // Si no se mueve, solo limitar posición
+          limitarPosicion();
+          fijarPosicion();
+        }
+
+        // Actualizar posición de las sierras
+        if (!estadoJuego.gameOver) {
+          actualizarSierras();
+        }
+        
+        // Actualizar posición de los módulos
+        if (!estadoJuego.gameOver) {
+          actualizarModulos();
+        }
+
+        if (!estadoJuego.gameOver && hayColisionConSierras()) {
+          desencadenarGameOver();
+        }
+        
+        // Los módulos son sierras rosa/negro que matan al tocarlas
+        if (!estadoJuego.gameOver && hayColisionConModulos()) {
+          desencadenarGameOver();
+        }
+
+        // Verificar colisión con la llave
+        if (!estadoJuego.gameOver && hayColisionConLlave()) {
+          recogerLlave();
+        }
+        
+        // Verificar si está encima del botón para cambiar de nivel (solo si no requiere llave)
+        const nivel = niveles[estadoJuego.nivelActual];
+        if (!estadoJuego.gameOver && !estadoJuego.cambiandoNivel) {
+          if (nivel.boton && nivel.boton.requiereLlave) {
+            // Nivel con llave: requiere click, no automático
+            // El click se maneja en el event listener del botón
+          } else if (estaEncimaDelBoton()) {
+            // Nivel sin llave: cambio automático
+            cambiarNivel();
+          }
+        }
+
+        actualizarOjos(vector);
+        requestAnimationFrame(bucle);
+      }
+
+      // Inicializar primer nivel
+      crearSierras();
+      const nivelInicial = niveles[estadoJuego.nivelActual];
+      if (nivelInicial.modulos) {
+        crearModulos();
+      }
+      crearBotonNivel();
+      if (nivelInicial.llave) {
+        crearLlave();
+      }
+      actualizarLimites();
+      inicializarPosicionesSierras();
+      posicionarModulos();
+      posicionarLlave();
+      fijarPosicion();
+      estado.velocidadActual = estado.velocidadBase + dash.incrementoExtra;
+      indicadorNivel.textContent = `Nivel ${estadoJuego.nivelActual + 1}`;
+      
+      // Inicializar palabra aleatoria
+      mostrarPalabraAleatoria();
+      
+      // Cambiar palabra cada 10 segundos
+      setInterval(() => {
+        if (!estadoJuego.gameOver) {
+          mostrarPalabraAleatoria();
+        }
+      }, 10000);
+      
+      bucle();
+    })();
+  </script>
+</body>
+</html>
